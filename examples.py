@@ -6,7 +6,7 @@
 # isBlue = lambda x: x.colour == 'blue'
 
 # predicates = MList([
-#     isHedg, 
+#     isHedg,
 #     isBlue,
 #     isFast,
 # ])
@@ -15,3 +15,21 @@
 
 # print(isSonic(fido))    # False
 # print(isSonic(sonic))   # True
+
+
+# def succ(x):
+#     return x + 1
+
+
+# function = map succ [1,2,3,4,5]
+
+# ex = "something"
+
+# print(ex.capitalize())
+
+
+# **
+# *, /, //, %,
+# >>, <<
+# &
+# |

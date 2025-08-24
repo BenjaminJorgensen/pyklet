@@ -1,16 +1,17 @@
 from __future__ import annotations
 from typing import TypeVar, Callable
 from abc import abstractmethod
-from inspect import signature
 
-# Custom imports 
-from .Applicative import Applicative
+# local imports
+from .applicative import Applicative
 
-T = TypeVar('T')
+T = TypeVar("T")
+
+
 class Monad(Applicative[T]):
     @staticmethod
     @abstractmethod
-    def pure() -> T: # type: ignore
+    def pure() -> T:  # type: ignore
         raise NotImplementedError
 
     # bind :: m a -> (a -> m b) -> m b
