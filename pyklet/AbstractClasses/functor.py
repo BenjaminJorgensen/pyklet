@@ -11,5 +11,8 @@ class Functor(Generic[T], ABC):
     def fmap(self, f: Callable[..., T]) -> T:
         raise NotImplementedError
 
-    def __xor__(self, f: Callable[..., T]) -> T:
+    def __rshift__(self, f: Callable[..., T]) -> T:
+        return self.fmap(f)
+
+    def __rrshift__(self, f: Callable[..., T]) -> T:
         return self.fmap(f)

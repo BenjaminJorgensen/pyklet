@@ -1,9 +1,7 @@
 from __future__ import annotations
-from typing import Callable
-from pyklet.AbstractClasses import Monoid
 from pyklet.Instances import MSet, MList
-from pyklet.Prelude import makeLazy, lazy, fmap
-from pyklet.Prelude.control import bind
+from pyklet.Prelude import lazy, filter
+from pyklet.Prelude.io import putStrLn
 
 
 class Pos:
@@ -12,15 +10,16 @@ class Pos:
         self.y = y
 
     def __add__(self, other: Pos) -> Pos:
-        self.x += other.x
-        self.y += other.y
-        return Pos(self.x, self.y)
+        return Pos(self.x + other.x, self.y + other.y)
 
     def __str__(self):
         return f"({chr(ord('A') + self.x)}, {self.y})"
 
+    def __repr__(self):
+        return f"{self.x, self.y}"
 
-def knightInThreeMoves(knight_dirs: MSet, f: Callable, knight_pos=Pos("B", 3)):
+
+def knightInThreeMoves(knight_dirs: MSet, knight_pos=Pos("B", 3)):
     """
     Goal:
         Given a set of tuples `knight_dirs` which contains all directions a
@@ -33,7 +32,6 @@ def knightInThreeMoves(knight_dirs: MSet, f: Callable, knight_pos=Pos("B", 3)):
     """
     # The lazy function allows partial application
     # We can supply too few arguments and defer execution until later
-    lazyAdd = f(lambda x, y: x + y)
 
     # Checks if position is valid on a chessboard
     def inBounds(position):
@@ -42,119 +40,38 @@ def knightInThreeMoves(knight_dirs: MSet, f: Callable, knight_pos=Pos("B", 3)):
     def nextMove(pos: Pos) -> MSet[Pos]:
         """Takes a position and returns a set of valid next moves"""
 
-        # The '@' sytax is sugar for mapping a function to a datastruture (Functor)
-        # Equivilant to `map(lazyadd(pos), knight_dirs)` (sort of)
-        new_positions = lazyAdd(pos) @ knight_dirs
+        # The '@' syntax is sugar for mapping a function to a data structure (Functor)
+        # Equivalent to `map(lazyadd(pos), knight_dirs)` (sort of)
+        new_positions = lazy(lambda x: pos + x) >> knight_dirs
 
-        return new_positions.filter(inBounds)
+        return filter / inBounds / new_positions
 
     # Monadic binding the nextMove function
-    # all_moves = MSet(knight_pos) >> nextMove >> nextMove >> nextMove
-    # all_moves = MSet(knight_pos) \
-    #     .bind(nextMove) \
-    #     .bind(nextMove) \
-    #     .bind(nextMove)
-    all_moves = bind / MSet(knight_pos) / nextMove
-    print(fmap(str, all_moves))
-
-    # '(B, 0)', '(D, 1)', '(B, 1)', '(A, 3)', '(B, 3)', '(E, 0)',
-    # '(C, 4)', '(B, 7)', '(A, 0)', '(B, 6)', '(A, 4)', '(C, 5)',
-    # '(D, 0)', '(C, 3)', '(B, 2)', '(C, 1)', '(A, 2)', '(C, 0)',
-    # '(D, 3)', '(A, 1)', '(A, 5)', '(D, 2)
+    # all_moves = MSet(knight_pos).bind(nextMove).bind(nextMove).bind(nextMove)
+    all_moves = MSet(knight_pos).bind(nextMove).bind(nextMove).bind(nextMove)
+    return all_moves
 
 
 if __name__ == "__main__":
-    # flip = lambda x : (x[1], x[0])
 
-    # xmoves = MList[1,-1]
-    # ymoves = MList[2,-2]
+    def flip(x):
+        return (x[1], x[0])
 
-    # moves = lazy(lambda x, y: (x,y)) @ xmoves ^ ymoves
-    # knight_deltas = moves.mappend(flip @ moves).fmap(lambda x: Pos(x[0], x[1]))
-    # knight_deltas = MSet(knight_deltas)
+    xmoves = MList[1, -1]
+    ymoves = MList[2, -2]
 
-    # start = Pos(3,3)
-    # knightInThreeMoves(knight_deltas, PykletFunction, knight_pos=start)
-    class Animal:
-        def __init__(self, animal, colour, speed) -> None:
-            self.animal = animal
-            self.colour = colour
-            self.speed = speed
+    moves = lazy(lambda x, y: (x, y)) >> xmoves ^ ymoves
+    knight_deltas = moves.mappend(flip >> moves).fmap(lambda x: Pos(x[0], x[1]))
+    knight_deltas = MSet(knight_deltas)
+    putStrLn / knight_deltas
 
-    class All(Monoid):
-        def __init__(self, value: bool) -> None:
-            self.value = value
+    start = Pos(3, 3)
+    _ = lazy(print) / knightInThreeMoves(knight_deltas, knight_pos=start)
 
-        def mappend(self, other: All) -> All:
-            return All(self.value and other.value)
+    # def rotate(x:
+    #     for _ in range(len(x) // 2):
+    #         x.insert(0, x.pop())
+    #     return x
 
-        @staticmethod
-        def mempty() -> All:
-            return All(True)
-
-        def __str__(self):
-            return f"{super().__str__()}({self.value})"
-
-        def getAll(self) -> bool:
-            return self.value
-
-    @lazy
-    def getAll(a: All):
-        return a.getAll()
-
-    rover = Animal(animal="dog", colour="black", speed="fast")
-    sonic = Animal(animal="hedgehog", colour="blue", speed="fast")
-
-    def isHedg(x):
-        return x.animal == "hedgehog"
-
-    def isFast(x):
-        return x.speed == "fast"
-
-    def isBlue(x):
-        return x.colour == "blue"
-
-    predicates = MList[
-        isHedg,
-        # isBlue,
-        # isFast,
-    ]
-
-    # isSonic = predicates.foldMap(compose(All))
-    # print(isSonic(sonic))
-    # isSonic2 = predicates.foldMap | compose(All)
-    # print(isSonic2(sonic))
-
-    # isBlueHedge = lambda x: allHedge.mappend(allBlue)(x)
-
-    # print(isSonic(fido))    # False
-    # print(isSonic(sonic))   # True
-
-    @lazy
-    def to_str(x):
-        return str(x)
-
-    @lazy
-    def to_list(x):
-        return list(x)
-
-    def rotate(x):
-        for _ in range(len(x) // 2):
-            x.insert(0, x.pop())
-        return x
-
+    # func = makeLazy * "-".join * rotate * list * str / 12345
     # print(func)
-
-    # print("-".join(rotate(list(str(12345)))))
-    func = makeLazy * "-".join * rotate * to_list * to_str / 12345
-    print(func)
-    # func = makeLazy % filter % (lambda x: x > 3) % MList[1,2,3,4,5]
-    # func = makeLazy
-    # print(list(func))
-
-#     def add3(a, b, c):
-#         print(a, b, c)
-#         return a + b + c
-
-#     # func = makeLazy / add3 / 1 / 2 / 3
-#     print(func)

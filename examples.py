@@ -1,35 +1,40 @@
-# fido = Animal(animal='dog', colour='black', speed='fast')
-# sonic = Animal(animal='hedgehog', colour='blue', speed='fast')
+from pyklet.Prelude import lazy, makeLazy
+from pyklet.Instances import MList
 
-# isHedg = lambda x: x.animal == 'hedgehog'
-# isFast = lambda x: x.speed == 'fast'
-# isBlue = lambda x: x.colour == 'blue'
+if __name__ == "__main__":
 
-# predicates = MList([
-#     isHedg,
-#     isBlue,
-#     isFast,
-# ])
+    @lazy
+    def story(person: str, action: str, place: str) -> str:
+        return f"{person} did {action} at {place}"
 
-# isSonic = lambda animal: predicates.foldMap(lambda pred: All(pred(animal))).getAll()
+    # New function application
+    # Equivalent to story("Benjamin", "swim", "beach")
+    holiday = story / "Benjamin" / "Swim" / "beach"
+    print(holiday)  # "Benjamin did swim at beach"
 
-# print(isSonic(fido))    # False
-# print(isSonic(sonic))   # True
+    # Partial function application,
+    david_runs = story / "David" / "run"
 
+    # Can be used later
+    marathon = david_runs / "France"
+    print(marathon)  # -> "David did ran at France"
 
-# def succ(x):
-#     return x + 1
+    # Can map functions to lists
+    # Equivalent to map(david_runs, ["Gym", "School", "Train Station"])
+    running_jornal = david_runs >> MList["Gym", "School", "Train Station"]
+    print(
+        running_jornal
+    )  # ["David did run at Gym", "David did run at School", "Train Station"]
 
+    # Function Composition
+    to_digits = lazy(list) * str
+    print(to_digits / 123)  # -> ['1', '2, '3']
 
-# function = map succ [1,2,3,4,5]
+    # Works with native functions (including strings)
+    def rotate(x):
+        for _ in range(len(x) // 2):
+            makeLazy / x.insert / 0 / x.pop()
+        return x
 
-# ex = "something"
-
-# print(ex.capitalize())
-
-
-# **
-# *, /, //, %,
-# >>, <<
-# &
-# |
+    rotated_pin = makeLazy * "-".join * rotate * list * str / 123456
+    print(rotated_pin)  # -> 4-5-6-1-2-3
